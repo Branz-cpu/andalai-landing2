@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Numerik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar untuk tabel */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans min-h-screen selection:bg-blue-500/30">
+
+    <header class="bg-slate-950 border-b border-slate-800 shadow-xl py-6 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Kalkulator Numerik</h1>
+                    <p class="text-sm text-slate-400">Penyelesaian Sistem Persamaan Lanjar (SPL)</p>
+                </div>
+            </div>
+            <div class="text-right text-xs text-slate-400 bg-slate-900 p-3 rounded-lg border border-slate-800">
+                <span class="font-semibold text-slate-300 block mb-1">Tim Pengembang (Teknik Informatika - UNPER)</span>
+                Muhamad Gibran Aji Sutama &bull; Nasywa Aprisa Zustira &bull; Bimo Alviana Sopian
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-4 space-y-6">
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <h2 class="text-lg font-semibold text-white mb-5">Parameter Kontrol</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Metode Penyelesaian</label>
+                        <select id="methodSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="toggleIterationParams()">
+                            <option value="balikan">Matriks Balikan (Invers)</option>
+                            <option value="jacobi">Lelaran Jacobi</option>
+                            <option value="gauss-seidel">Lelaran Gauss-Seidel</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Dimensi Matriks (n x n)</label>
+                        <input type="number" id="sizeInput" min="2" max="10" value="2" class="w-full bg-slate-900 border border-slate-600 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="renderGrid()">
+                    </div>
+
+                    <div id="iterParams" class="hidden pt-4 border-t border-slate-700 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Toleransi Error (ε)</label>
+                            <input type="number" id="tolInput" step="0.0001" value="0.01" class="w-full bg-slate-900 border border-slate-600 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Maksimal Iterasi</label>
+                            <input type="number" id="maxIterInput" value="100" class="w-full bg-slate-900 border border-slate-600 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-slate-700 space-y-3">
+                    <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-500/20">
+                        Hitung Solusi
+                    </button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="resetData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2 px-4 rounded-xl transition-all">
+                            Reset
+                        </button>
+                        <button onclick="loadExample()" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/20 font-medium py-2 px-4 rounded-xl transition-all text-sm">
+                            Contoh Soal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-8 space-y-6">
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl overflow-x-auto custom-scrollbar">
+                <h2 class="text-lg font-semibold text-white mb-6">Sistem Persamaan Linier (SPL)</h2>
+                <div class="flex gap-8 items-start min-w-max">
+                    <div>
+                        <div class="text-center text-sm font-medium text-slate-400 mb-3">Matriks Koefisien (A)</div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                            <div id="matrixGrid" class="grid gap-2"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-center text-sm font-medium text-slate-400 mb-3">Vektor (B)</div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                            <div id="vectorGrid" class="grid gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="guessContainer" class="hidden mt-8 pt-6 border-t border-slate-700">
+                    <div class="text-sm font-medium text-slate-400 mb-3">Tebakan Awal (Initial Guess X₀)</div>
+                    <div id="guessGrid" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <div id="resultArea" class="hidden scroll-mt-8 space-y-6"></div>
+        </div>
+    </main>
+
+    <script>
+        // INISIALISASI
+        let size = 2;
+        let matrixA = [[0, 0], [0, 0]];
+        let vectorB = [0, 0];
+        let guess = [0, 0];
+
+        function toggleIterationParams() {
+            const method = document.getElementById('methodSelect').value;
+            const iterParams = document.getElementById('iterParams');
+            const guessContainer = document.getElementById('guessContainer');
+            if (method === 'jacobi' || method === 'gauss-seidel') {
+                iterParams.classList.remove('hidden');
+                guessContainer.classList.remove('hidden');
+            } else {
+                iterParams.classList.add('hidden');
+                guessContainer.classList.add('hidden');
+            }
+        }
+
+        function updateStateFromDOM() {
+            for(let i=0; i<size; i++){
+                for(let j=0; j<size; j++){
+                    matrixA[i][j] = parseFloat(document.getElementById(`a-${i}-${j}`).value) || 0;
+                }
+                vectorB[i] = parseFloat(document.getElementById(`b-${i}`).value) || 0;
+                if(document.getElementById(`g-${i}`)) {
+                    guess[i] = parseFloat(document.getElementById(`g-${i}`).value) || 0;
+                }
+            }
+        }
+
+        function renderGrid() {
+            // Simpan data lama sebelum resize
+            if(document.getElementById('a-0-0')) updateStateFromDOM();
+
+            let newSize = parseInt(document.getElementById('sizeInput').value);
+            if(isNaN(newSize) || newSize < 2) newSize = 2;
+            if(newSize > 10) newSize = 10;
+            size = newSize;
+
+            // Resize Array
+            const newA = Array(size).fill(0).map(() => Array(size).fill(0));
+            const newB = Array(size).fill(0);
+            const newG = Array(size).fill(0);
+            for(let i=0; i<Math.min(matrixA.length, size); i++){
+                for(let j=0; j<Math.min(matrixA[i].length, size); j++) newA[i][j] = matrixA[i][j];
+                newB[i] = vectorB[i];
+                newG[i] = guess[i];
+            }
+            matrixA = newA; vectorB = newB; guess = newG;
+
+            // Render HTML
+            const mGrid = document.getElementById('matrixGrid');
+            const vGrid = document.getElementById('vectorGrid');
+            const gGrid = document.getElementById('guessGrid');
+            
+            mGrid.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+            
+            let mHtml = ''; let vHtml = ''; let gHtml = '';
+            for(let i=0; i<size; i++){
+                vHtml += `<input type="number" id="b-${i}" value="${vectorB[i]}" class="w-16 h-10 text-center bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">`;
+                gHtml += `<div class="flex items-center bg-slate-900 rounded-lg border border-slate-600 overflow-hidden"><div class="bg-slate-800 px-3 py-2 border-r border-slate-600 text-slate-400 text-sm">X${i+1}</div><input type="number" id="g-${i}" value="${guess[i]}" class="w-20 px-3 py-2 bg-transparent text-white focus:outline-none"></div>`;
+                for(let j=0; j<size; j++){
+                    mHtml += `<input type="number" id="a-${i}-${j}" value="${matrixA[i][j]}" class="w-16 h-10 text-center bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">`;
+                }
+            }
+            mGrid.innerHTML = mHtml; vGrid.innerHTML = vHtml; gGrid.innerHTML = gHtml;
+        }
+
+        function resetData() {
+            matrixA = Array(size).fill(0).map(() => Array(size).fill(0));
+            vectorB = Array(size).fill(0);
+            guess = Array(size).fill(0);
+            document.getElementById('tolInput').value = 0.01;
+            document.getElementById('maxIterInput').value = 100;
+            document.getElementById('resultArea').innerHTML = '';
+            document.getElementById('resultArea').classList.add('hidden');
+            renderGrid();
+        }
+
+        function loadExample() {
+            document.getElementById('sizeInput').value = 2;
+            document.getElementById('methodSelect').value = 'jacobi';
+            toggleIterationParams();
+            renderGrid(); // Reset size to 2 first
+            
+            matrixA = [[4, 1], [2, 3]];
+            vectorB = [5, 5];
+            guess = [0, 0];
+            
+            document.getElementById('a-0-0').value = 4; document.getElementById('a-0-1').value = 1;
+            document.getElementById('a-1-0').value = 2; document.getElementById('a-1-1').value = 3;
+            document.getElementById('b-0').value = 5; document.getElementById('b-1').value = 5;
+            document.getElementById('g-0').value = 0; document.getElementById('g-1').value = 0;
+            document.getElementById('tolInput').value = 0.01;
+        }
+
+        // --- ALGORITMA ---
+        function invertMatrix(A) {
+            let n = A.length;
+            let aug = [];
+            for(let i=0; i<n; i++) {
+                aug[i] = [];
+                for(let j=0; j<n; j++) {
+                    aug[i][j] = A[i][j];
+                    aug[i][j+n] = (i===j) ? 1 : 0;
+                }
+            }
+            let det = 1;
+            for(let i=0; i<n; i++) {
+                let maxRow = i;
+                for(let k=i+1; k<n; k++) if(Math.abs(aug[k][i]) > Math.abs(aug[maxRow][i])) maxRow = k;
+                if(Math.abs(aug[maxRow][i]) < 1e-10) return { det: 0, inv: null };
+                if(maxRow !== i) {
+                    let temp = aug[i]; aug[i] = aug[maxRow]; aug[maxRow] = temp;
+                    det *= -1; 
+                }
+                let pivot = aug[i][i];
+                det *= pivot;
+                for(let j=0; j<2*n; j++) aug[i][j] /= pivot;
+                for(let k=0; k<n; k++) {
+                    if(k !== i) {
+                        let factor = aug[k][i];
+                        for(let j=0; j<2*n; j++) aug[k][j] -= factor * aug[i][j];
+                    }
+                }
+            }
+            let inv = [];
+            for(let i=0; i<n; i++) inv[i] = aug[i].slice(n, 2*n);
+            return { det, inv };
+        }
+
+        function checkDominant(A) {
+            for(let i=0; i<A.length; i++) {
+                let sum = 0;
+                for(let j=0; j<A.length; j++) if(i!==j) sum += Math.abs(A[i][j]);
+                if(Math.abs(A[i][i]) <= sum) return false;
+            }
+            return true;
+        }
+
+        function calculate() {
+            updateStateFromDOM();
+            const method = document.getElementById('methodSelect').value;
+            const tol = parseFloat(document.getElementById('tolInput').value) || 0.01;
+            const maxI = parseInt(document.getElementById('maxIterInput').value) || 100;
+            const n = size;
+            const resultArea = document.getElementById('resultArea');
+            resultArea.classList.remove('hidden');
+
+            // Cek diagonal 0 untuk lelaran
+            if(method !== 'balikan') {
+                for(let i=0; i<n; i++) {
+                    if(Math.abs(matrixA[i][i]) < 1e-10) {
+                        resultArea.innerHTML = `<div class="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 font-medium">Error: Elemen diagonal matriks tidak boleh nol untuk metode lelaran. Tukar baris!</div>`;
+                        return;
+                    }
+                }
+            }
+
+            let html = `<div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl overflow-hidden">`;
+            let warning = method !== 'balikan' && !checkDominant(matrixA) ? `<div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 font-medium text-sm">Peringatan: Matriks tidak dominan diagonal secara ketat. Iterasi berisiko divergen.</div>` : '';
+            html += warning;
+
+            if(method === 'balikan') {
+                const { det, inv } = invertMatrix(matrixA);
+                if(det === 0) {
+                    resultArea.innerHTML = `<div class="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 font-medium">Error: Matriks Singular (Determinan = 0). Tidak memiliki balikan.</div>`;
+                    return;
+                }
+                let X = Array(n).fill(0);
+                for(let i=0; i<n; i++) {
+                    for(let j=0; j<n; j++) X[i] += inv[i][j] * vectorB[j];
+                }
+
+                html += `<h2 class="text-xl font-bold text-white mb-4">Hasil (Matriks Balikan)</h2>
+                         <div class="bg-slate-900 rounded-xl p-5 border border-slate-700 mb-6 flex flex-wrap gap-4">`;
+                X.forEach((val, i) => {
+                    html += `<div class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3"><span class="text-slate-400 font-mono text-lg">X${i+1}</span> <span class="text-white">=</span> <span class="text-blue-400 font-bold font-mono text-xl">${val.toFixed(5)}</span></div>`;
+                });
+                html += `</div><div class="grid grid-cols-2 gap-4"><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><div class="text-sm text-slate-400 mb-2">Determinan</div><div class="text-2xl font-bold font-mono text-white">${det.toFixed(4)}</div></div>`;
+                html += `<div class="bg-slate-900 p-4 rounded-xl border border-slate-700 overflow-x-auto"><div class="text-sm text-slate-400 mb-2">Matriks Invers</div><div class="grid gap-2" style="grid-template-columns: repeat(${n}, minmax(0, 1fr))">`;
+                inv.forEach(row => row.forEach(val => html += `<div class="text-emerald-300 font-mono text-sm">${val.toFixed(3)}</div>`));
+                html += `</div></div></div>`;
+
+            } else {
+                let X = [...guess];
+                let iter = 0; let error = Infinity;
+                let history = [];
+
+                while(iter < maxI && error > tol) {
+                    let X_new = [...X];
+                    let maxErr = 0;
+                    for(let i=0; i<n; i++) {
+                        let sum = 0; let oldXi = X[i];
+                        for(let j=0; j<n; j++) {
+                            if(i!==j) sum += matrixA[i][j] * (method === 'gauss-seidel' ? X[j] : X[j]); // X[j] is updated directly for Gauss-Seidel
+                        }
+                        let newVal = (vectorB[i] - sum) / matrixA[i][i];
+                        if(method === 'jacobi') X_new[i] = newVal;
+                        else X[i] = newVal;
+                        
+                        let currentErr = Math.abs((method === 'jacobi' ? X_new[i] : X[i]) - oldXi);
+                        if(currentErr > maxErr) maxErr = currentErr;
+                    }
+                    if(method === 'jacobi') X = [...X_new];
+                    error = maxErr; iter++;
+                    history.push({iter, X: [...X], error});
+                }
+
+                html += `<h2 class="text-xl font-bold text-white mb-4">Hasil (${method === 'jacobi' ? 'Jacobi' : 'Gauss-Seidel'})</h2>
+                         <div class="flex gap-4 mb-4"><span class="bg-slate-900 px-3 py-1 rounded text-sm text-slate-300">Iterasi: ${iter}</span> <span class="bg-slate-900 px-3 py-1 rounded text-sm ${error <= tol ? 'text-emerald-400' : 'text-amber-400'}">Status: ${error <= tol ? 'Konvergen' : 'Terhenti (Batas)'}</span></div>
+                         <div class="bg-slate-900 rounded-xl p-5 border border-slate-700 mb-6 flex flex-wrap gap-4">`;
+                X.forEach((val, i) => {
+                    html += `<div class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3"><span class="text-slate-400 font-mono text-lg">X${i+1}</span> <span class="text-white">=</span> <span class="text-blue-400 font-bold font-mono text-xl">${val.toFixed(5)}</span></div>`;
+                });
+                
+                // Tabel Iterasi
+                html += `</div><div class="overflow-y-auto max-h-96 rounded-xl border border-slate-700 bg-slate-900 custom-scrollbar"><table class="w-full text-left text-sm text-slate-300">
+                         <thead class="text-xs uppercase bg-slate-800 text-slate-400 sticky top-0"><tr><th class="px-4 py-3">Iter</th>`;
+                for(let i=0; i<n; i++) html += `<th class="px-4 py-3">X${i+1}</th>`;
+                html += `<th class="px-4 py-3 text-right">Error</th></tr></thead><tbody>`;
+                history.forEach(row => {
+                    html += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="px-4 py-3">${row.iter}</td>`;
+                    row.X.forEach(v => html += `<td class="px-4 py-3 font-mono">${v.toFixed(5)}</td>`);
+                    html += `<td class="px-4 py-3 text-right font-mono text-emerald-400">${row.error.toFixed(6)}</td></tr>`;
+                });
+                html += `</tbody></table></div>`;
+            }
+            
+            html += `</div>`;
+            resultArea.innerHTML = html;
+            resultArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Inisialisasi awal UI
+        renderGrid();
+        toggleIterationParams();
+    </script>
+</body>
+</html>
